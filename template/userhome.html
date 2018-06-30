@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+<script src="https://cdn.bootcss.com/vue/2.5.16/vue.min.js"></script>
+
+<style>
+    body{
+        margin: 0;
+        font-family: Arial,Helvetica,sans-serif;
+    }
+    .topnav{
+        overflow: hidden;
+        background-color: #333;
+    }
+    .topnav a{
+        float: left;
+        color: #f2f2f2;
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+        font-size: 17px;
+    }
+    .topnav a:hover{
+        background-color:#ddd;
+        color: black;
+    }
+    input[type=text],input[type=password]{
+        width:100%;
+        padding:15px;
+        margin:5px 0 22px 0;
+        display:inline-block;
+        border: none;
+        background: #f1f1f1;
+    }
+    input[type=text]:focus,input[type=password]:focus{
+        background: #ddd;
+        outline: none;
+    }
+    hr{
+        border: 1px solid #f1f1f1;
+        margin-bottom: 25px;
+    }
+
+    a{
+        color:dodgerblue;
+    }
+
+</style>
+<body >
+
+<div class="topnav">
+    <a class="active" href="#home">Home</a>
+    <a class="" href="#news">{{.Name}}</a>
+    <a class="" href="#about">About</a>
+    <a id="quit" href="http://127.0.0.1:8080/" >退出</a>
+</div>
+
+<div>
+    <input type="file" name="file" id="upload" onchange="change()"/>
+    <input type="submit" value="upload file" onclick="post_file()"/>
+</div>
+
+<div  style="margin-top: 100px">
+    <ul id="video_list">
+
+    </ul>
+</div>
+<button onclick="ClearHtml()">清除</button>
+<script>
+    function setCookie(cname,cvalue,exdays)
+    {
+        var d = new Date();
+        d.setTime(d.getTime()+(exdays*24*60*60*1000));
+        var expires = "expires="+d.toGMTString();
+        document.cookie = cname + "=" + cvalue + "; " + expires;
+    }
+    function getCookie(cname)
+    {
+        var name = cname + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0; i<ca.length; i++)
+        {
+            var c = ca[i].trim();
+            if (c.indexOf(name)==0) return c.substring(name.length,c.length);
+        }
+        return "";
+    }
+    function removeCookie(name)
+    {
+        setCookie(name,"",-1);
+    }
+
+    $(document).ready(function() {
+        $("#quit").click(function () {
+            removeCookie("username")
+            removeCookie("session")
+        })
+        get_video_list()
+    })
+    function post_addvideo(filename) {
+        // alert(filename)
+        $.ajax({
+            url: "/api",
+            // data:"{url:"+url+",method:"+method+",req_body:"+req_body+"}",
+            data:"{\"url\":\"http://127.0.0.1:8088/user/"+getCookie("username")+"/videos\",\n" +
+            "  \"method\":\"POST\",\n" +
+            " \"req_body\":\"{\\\"name\\\":\\\""+filename+"\\\"}\"\n" +
+            "}",
+            type:"POST",
+            dataType:"json",
+            headers: {"Content-Type": "application/json"},
+            success:function(result){
+                alert(JSON.stringify(result));
+            },
+            error:function(er){
+                alert(JSON.stringify(er));
+            }
+        });
+    }
+    var flag=true
+    removeCookie("token")
+    function post_file() {
+        var fileObj = document.getElementById("upload").files[0]; // js 获取文件对象
+        if (typeof (fileObj) == "undefined" || fileObj.size <= 0) {
+            alert("请选择文件");
+            return;
+        }
+        var formFile = new FormData();
+        formFile.append("file", fileObj); //加入文件对象
+        var filename=fileObj.name
+        var data = formFile;
+        var token=getCookie("token")
+        $.ajax({
+            url: "/upload/"+filename,
+            data: data,
+            type: "Post",
+            dataType: "json",
+            cache: false,//上传文件无需缓存
+            processData: false,//用于对data参数进行序列化处理 这里必须false
+            contentType: false, //必须
+            headers: {
+                token: token//这里是Token
+                //X_User_Name:getCookie("username"),
+            },
+            success: function (result) {
+                alert(JSON.stringify(result));
+            },
+            error:function(er){
+                //  alert(JSON.stringify(er));
+                if(er.status==201){
+                    // alert(er.responseText)
+                    post_addvideo(er.responseText)
+                }
+            }
+        })
+    }
+    function change(){
+        if (flag){
+            getToken()
+            flag=false
+        }
+    }
+    function  getToken() {
+        $.ajax({
+            url: "/token",
+            type: "GET",
+            success: function (result) {
+                setCookie("token",result,1)
+            },
+            error:function(er){
+                alert(JSON.stringify(er));
+            }
+        })
+    }
+    function get_video_list() {
+        $.ajax({
+            url: "/api",
+            // data:"{url:"+url+",method:"+method+",req_body:"+req_body+"}",
+            data:"{\"url\":\"http://127.0.0.1:8088/user/"+getCookie("username")+"/videos\",\n" +
+            "  \"method\":\"GET\",\n" +
+            " \"req_body\":\"{}\"\n" +
+            "}",
+            type:"POST",
+            dataType:"json",
+            headers: {"Content-Type": "application/json"},
+            success:function(result){
+                //alert(JSON.stringify(result));
+                for(i = 0,len = result.length;i < len;i++) {
+                    InsertHtml(result[i].name)
+                }
+                //alert(vm.videos)
+            },
+            error:function(er){
+                alert(JSON.stringify(er));
+            }
+        });
+    }
+    function InsertHtml(name) {
+        var html="<li ><video controls style=\"width: 400px;height: 200px\">\n" +
+                " <source src=\"http://127.0.0.1:8080/video/"+name+"\" type='video/mp4' />\n" +
+                " </video>\n" +
+                " </li>";
+        $("#video_list").append(html);
+    }
+    function ClearHtml() {
+        $("#video_list").empty();
+    }
+</script>
+</body>
+</html>

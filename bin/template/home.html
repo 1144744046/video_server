@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+<style>
+    body{
+        margin: 0;
+        font-family: Arial,Helvetica,sans-serif;
+    }
+    .topnav{
+        overflow: hidden;
+        background-color: #333;
+    }
+    .topnav a{
+        float: left;
+        color: #f2f2f2;
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+        font-size: 17px;
+    }
+    .topnav a:hover{
+        background-color:#ddd;
+        color: black;
+    }
+    input[type=text],input[type=password]{
+        width:100%;
+        padding:15px;
+        margin:5px 0 22px 0;
+        display:inline-block;
+        border: none;
+        background: #f1f1f1;
+    }
+    input[type=text]:focus,input[type=password]:focus{
+        background: #ddd;
+        outline: none;
+    }
+    hr{
+        border: 1px solid #f1f1f1;
+        margin-bottom: 25px;
+    }
+    .registerbtn{
+        background-color: #4caf50;
+        color:white;
+        padding: 16px 20px;
+        margin: 8px 0;
+        border:none;
+        cursor:pointer;
+        width:100%;
+        opacity: 0.9;
+        font-size:20px;
+    }
+    .registerbtn:hover{
+        opacity: 1;
+    }
+    a{
+        color:dodgerblue;
+    }
+    .signin{
+        background-color: #f1f1f1;
+        text-align: center;
+    }
+</style>
+
+
+</head>
+<body id="main-back">
+   <div class="topnav">
+       <a class="active" href="#home">Home</a>
+       <a class="" href="#news">{{.Name}}</a>
+       <a class="" href="#about">About</a>
+   </div>
+<div class="topic-back" style="padding-left:16px">
+    <h2 id="title">Welcome to Movie</h2>
+</div>
+<div  style="width:500px;margin:0 auto">
+    <div class="container">
+        <h1>Register</h1>
+        <hr>
+        <label for="email"><b>User name</b></label>
+        <input id="username" type="text" placeholder="enter user name"
+        name="username" required />
+        <label for="psw"><b>Password</b></label>
+        <input id="pwd" type="password" placeholder="enter password"
+               name="pwd" required />
+        <hr>
+        <button id="regbtn" type="submit" class="registerbtn">Register</button>
+
+        <button id="loginbtn" type="submit" class="registerbtn">Login</button>
+    </div>
+</div>
+</body>
+<script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+
+<script>
+    function setCookie(cname,cvalue,exdays)
+    {
+        var d = new Date();
+        d.setTime(d.getTime()+(exdays*24*60*60*1000));
+        var expires = "expires="+d.toGMTString();
+        document.cookie = cname + "=" + cvalue + "; " + expires;
+    }
+    function getCookie(cname)
+    {
+        var name = cname + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0; i<ca.length; i++)
+        {
+            var c = ca[i].trim();
+            if (c.indexOf(name)==0) return c.substring(name.length,c.length);
+        }
+        return "";
+    }
+    $(document).ready(function() {
+        $("#regbtn").click(function(){
+            var username=$("#username").val()
+            var pwd=$("#pwd").val()
+            if(username=="" ||pwd ==""){
+                return
+            }
+            post_register(username,pwd)
+        })
+        $("#loginbtn").click(function(){
+            var username=$("#username").val()
+            var pwd=$("#pwd").val()
+            if(username=="" ||pwd ==""){
+                return
+            }
+            post_login(username,pwd)
+        })
+        function post_register(username,pwd){
+            $.ajax({
+                url: "/api",
+               // data:"{url:"+url+",method:"+method+",req_body:"+req_body+"}",
+                data:"{\"url\":\"http://127.0.0.1:8088/user\",\n" +
+                "  \"method\":\"POST\",\n" +
+                " \"req_body\":\"{\\\"username\\\":\\\""+username+"\\\",\\\"pwd\\\":\\\""+pwd+"\\\"}\"\n" +
+                "}",
+                type:"POST",
+                dataType:"json",
+                headers: {"Content-Type": "application/json"},
+                success:function(result){
+                    alert(JSON.stringify(result));
+                    if (result.success==true){
+                        setCookie("username",username,7)
+                        setCookie("session",result.session_id,7)
+                        location.reload()
+                    }
+                },
+                error:function(er){
+                    alert(JSON.stringify(er));
+                }
+            });
+        }
+
+        function post_login(username,pwd) {
+            $.ajax({
+                url: "/api",
+                // data:"{url:"+url+",method:"+method+",req_body:"+req_body+"}",
+                data:"{\"url\":\"http://127.0.0.1:8088/user/"+username+"\",\n" +
+                "  \"method\":\"POST\",\n" +
+                " \"req_body\":\"{\\\"username\\\":\\\""+username+"\\\",\\\"pwd\\\":\\\""+pwd+"\\\"}\"\n" +
+                "}",
+                type:"POST",
+                dataType:"json",
+                headers: {"Content-Type": "application/json"},
+                success:function(result){
+                    alert(JSON.stringify(result));
+                    if (result.success==true){
+                        setCookie("username",username,7)
+                        setCookie("session",result.session_id,7)
+                        location.reload()
+                    }
+                },
+                error:function(er){
+                    alert(JSON.stringify(er));
+                }
+            });
+        }
+    })
+
+</script>
+</html>
